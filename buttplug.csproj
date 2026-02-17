@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <Nullable>disable</Nullable>
+    <LangVersion>8.0</LangVersion>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Exiled.Dev.References" Version="1.0.4" />
+    <PackageReference Include="EXILEDOFFICIAL" Version="8.12.2" />
+  </ItemGroup>
+
+</Project>
