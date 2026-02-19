@@ -7,22 +7,21 @@ namespace Buttplug.Commands {
     using Primitive = Exiled.API.Features.Toys.Primitive;
     using CommandSystem;
     using UnityEngine;
-
+    using Color = UnityEngine.Color;
+    using System.Drawing;
 
     [CommandHandler(typeof(GameConsoleCommandHandler))]
     [CommandHandler(typeof(RemoteAdminCommandHandler))]
     public class Spawnprim : CommandSystem.ICommand, IUsageProvider
     {
+        public Config config = new Config();
         public string Command { get; } = "spawnprim";
         public string[] Aliases { get; } = new[] { "sp" };
-        public string Description { get; } = "Spawns a primitive at a specified distance from the player.";
+        public string Description { get; } = "Spawns a primitive at a specific distance in huberts from the player.";
         public string[] Usage { get; } = new[] {"x", "y", "z", "r", "g", "b", "opacity"};
-        public Config config = new Config();
 
         public bool Execute(ArraySegment<string> arguments, ICommandSender sender, out string response)
         {
-            Player playerSender = Player.Get(sender);
-
             if (arguments.Count < 1)
             {
                 response = "Usage:\n(x), (y), (z), (r), (g), (b), (opacity)";
@@ -77,17 +76,47 @@ namespace Buttplug.Commands {
                 return false;
             }
 
-            Vector3 size = new Vector3(x, y, z);
+            int environmentMask = LayerMask.GetMask("Default");
+            
+            Color primColor;
+            
+            Player playerSender = Player.Get(sender);
+            Transform camera = playerSender.CameraTransform;
 
-            // Converting user input (RGB, 0-255) into Color object-acceptable values (0f-1f)
-            Color color = new Color(r / 255f, g / 255f, b / 255f, op);
+            Vector3 primRotation = new Vector3();
+            Vector3 primPosition = camera.position + (camera.forward * config.PrimitiveDistance);
+            Vector3 primScale = new Vector3(x, y, z);
 
-            // Getting player's position and adding to the z-axis a configurable value
-            Vector3 position = ( playerSender.Position + new Vector3(0f, 0f, config.PrimitiveDistance) );
+            if (Physics.Raycast(camera.position, camera.forward, out RaycastHit hit, config.PrimitiveDistance, environmentMask))
+            {
+                primPosition = hit.point;
 
-            Primitive.Create(position, null, size, true, color); // Position, rotation, scale, spawn, color (for some reason it doesn't accept color=color, etc.)
+                Vector3 upDirection = Vector3.ProjectOnPlane(Vector3.up, hit.normal).normalized;
+                if (upDirection.sqrMagnitude < 0.01f) // false if object hits the a wall, true if ceiling or floor
+                {
+                    upDirection = Vector3.ProjectOnPlane(Vector3.forward, hit.normal).normalized;
+                }
 
+                primRotation = Quaternion.LookRotation(hit.normal, upDirection).eulerAngles;
+
+                float stepSize = 0.005f;
+
+                while (Physics.CheckSphere(primPosition, x * 0.45f, environmentMask))
+                {
+                    primPosition += hit.normal * stepSize;
+                }
+
+                // Color inputs shift by one position forward if raycast hits a surface
+                primColor = new Color(b / 255f, r / 255f, g / 255f, op);
+            } else {
+                // Converting user input (RGB, 0-255) into Color object-acceptable values (0f-1f)
+                primColor = new Color(r / 255f, g / 255f, b / 255f, op);
+            }
+
+            Primitive.Create(PrimitiveType.Sphere, primPosition, primRotation, primScale, true, primColor);
+            
             response = "Primitive successfuly created!";
+            
             return true;
 
          }

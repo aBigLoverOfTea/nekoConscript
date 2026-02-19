@@ -8,6 +8,6 @@ namespace Buttplug
     {
         public bool IsEnabled { get; set; } = true;
         public bool Debug { get; set; } = false;
-        public float PrimitiveDistance { get; set; } = 1f;
+        public float PrimitiveDistance { get; set; } = 6f;
     }
 }
