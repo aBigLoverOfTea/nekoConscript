@@ -1,33 +1,44 @@
 ﻿using System;
 using Exiled.API.Features;
 using Exiled.API.Interfaces;
-using Exiled.Events.Handlers;
-
-using ServerHandler = Exiled.Events.Handlers.Server;
+using UnityEngine;
 
 namespace Buttplug
 {
+
+    using Buttplug.Commands;
+
     public class ButtplugPlugin : Plugin<Config>
     {
-        private EventHandlers eventHandlers;
-
         public override string Name => "Buttplug Plugin";
+
         public override string Author => "zaza";
+
+        public static ButtplugPlugin Instance { get; private set; }
+
         public override void OnEnabled()
         {
             if (!Config.IsEnabled)
                 return;
 
-            eventHandlers = new EventHandlers();
-            ServerHandler.RoundStarted += eventHandlers.OnRoundStarted;
-            Log.Warn("This shit works my nigga, but now cooler");
+            GameObject manager = new GameObject("UniversalManager");
+
+            manager.AddComponent<PrimitiveController>();
+
+            UnityEngine.Object.DontDestroyOnLoad(manager);
+
+            Instance = this;
+
+            Log.Warn("This shit works my nigga");
         }
 
         public override void OnDisabled()
         {
-            Log.Warn("This shit shutdowns my nigga, but now cooler");
-            ServerHandler.RoundStarted -= eventHandlers.OnRoundStarted;
-            eventHandlers = null;
+            Log.Warn("This shit shutdowns my nigga");
+
+            GameObject.Destroy(GameObject.Find("UniversalManager"));
+
+            Instance = null;
         }
     }
 }
